@@ -1,6 +1,6 @@
 import { ParsedStream } from '@aiostreams/types';
 import { formatSize, languageToEmoji } from './utils';
-import { serviceDetails } from '@aiostreams/utils';
+import { serviceDetails, Settings } from '@aiostreams/utils';
 
 export function torrentioFormat(stream: ParsedStream): {
   name: string;
@@ -35,8 +35,8 @@ export function torrentioFormat(stream: ParsedStream): {
     description += `\n${stream.message}`;
   }
 
-  if (stream.filename) {
-    description += `\n${stream.filename}`;
+  if (stream.filename || stream.folderName) {
+    description += `\n${stream.folderName}/${stream.filename}`;
   }
   if (
     stream.size ||
@@ -64,5 +64,12 @@ export function torrentioFormat(stream: ParsedStream): {
   if (languageEmojis.length > 0) {
     description += `\n${languageEmojis.join(' / ')}`;
   }
+
+  if (stream.proxied) {
+    name = `🕵️‍♂️ ${name}`;
+  } else if (Settings.SHOW_DIE) {
+    name = `🎲 ${name}`;
+  }
+
   return { name, description };
 }

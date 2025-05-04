@@ -24,20 +24,21 @@ const FormatterPreview: React.FC<FormatterPreviewProps> = ({ formatter }) => {
   const [indexers, setIndexers] = React.useState<string>('RARBG');
   const [seeders, setSeeders] = React.useState<number>(125);
   const [usenetAge, setUsenetAge] = React.useState<string>('10d'); // Days
-  const [addonName, setAddonName] = React.useState<string>('AIOStreams');
+  const [addonName, setAddonName] = React.useState<string>('Torrentio');
   const [providerId, setProviderId] = React.useState<string>('realdebrid');
   const [isCached, setIsCached] = React.useState<boolean>(true);
   const [isP2P, setIsP2P] = React.useState<boolean>(false);
   const [isPersonal, setIsPersonal] = React.useState<boolean>(false);
   const [duration, setDuration] = React.useState<number>(9120000); // 2h 32m
   const [fileSize, setFileSize] = React.useState<number>(62500000000); // 58.2 GB
+  const [proxied, setProxied] = React.useState<boolean>(false); // Proxied or not
   const parsedInfo = parseFilename(filename);
 
   console.log(`Formatter: ${formatter}`);
   const sampleStream: ParsedStream = {
     ...parsedInfo,
     addon: {
-      id: 'aiostreams',
+      id: 'test-addon',
       name: addonName,
     },
     filename: filename,
@@ -55,6 +56,7 @@ const FormatterPreview: React.FC<FormatterPreviewProps> = ({ formatter }) => {
     },
     type: providerId === 'usenet' ? 'usenet' : 'debrid',
     personal: isPersonal,
+    proxied: proxied,
   };
 
   const getFormatterExample = () => {
@@ -313,6 +315,12 @@ const FormatterPreview: React.FC<FormatterPreviewProps> = ({ formatter }) => {
               label="Personal"
               isChecked={isPersonal}
               setChecked={setIsPersonal}
+            />
+
+            <ToggleSwitch
+              label="Proxied"
+              isChecked={proxied}
+              setChecked={setProxied}
             />
           </div>
         </div>

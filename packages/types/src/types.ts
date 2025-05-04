@@ -7,15 +7,22 @@ export interface ParsedNameData {
   visualTags: string[];
   audioTags: string[];
   languages: string[];
+  title?: string;
+  year?: string;
+  season?: number;
+  seasons?: number[];
+  episode?: number;
 }
 
 // the parsed stream data which is to be used to create the final stream object
 export interface ParsedStream extends ParsedNameData {
+  proxied: boolean; // if the stream is proxied or not
   addon: {
     id: string;
     name: string;
   };
   filename?: string;
+  folderName?: string;
   message?: string;
   size?: number;
   provider?: {
@@ -148,11 +155,14 @@ export interface Config {
   minMovieSize: number | null;
   maxEpisodeSize: number | null;
   minEpisodeSize: number | null;
-  addonNameInDescription?: boolean;
   cleanResults: boolean;
   maxResultsPerResolution: number | null;
   excludeFilters: string[] | null;
   strictIncludeFilters: string[] | null;
+  regexFilters?: {
+    excludePattern?: string;
+    includePattern?: string;
+  };
   mediaFlowConfig?: {
     mediaFlowEnabled: boolean;
     proxyUrl: string;
@@ -171,6 +181,8 @@ export interface Config {
     enabled: boolean;
     credentials: { [key: string]: string };
   }[];
+  /** Space-separated regex patterns to sort streams by. Streams will be sorted based on the order of matching patterns. */
+  regexSortPatterns?: string;
 }
 
 interface BaseOptionDetail {

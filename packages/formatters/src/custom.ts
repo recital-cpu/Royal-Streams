@@ -1,5 +1,5 @@
 import { Config, CustomFormatter, ParsedStream } from '@aiostreams/types';
-import { serviceDetails } from '@aiostreams/utils';
+import { serviceDetails, Settings } from '@aiostreams/utils';
 import { formatDuration, formatSize, languageToEmoji } from './utils';
 
 /**
@@ -65,8 +65,15 @@ export function customFormat(
 }
 
 export type ParseValue = {
+  config?: {
+    addonName: string | null;
+    showDie: boolean | null;
+  };
   stream?: {
+    /** @deprecated Use filename instead */
     name: string | null;
+    filename: string | null;
+    folderName: string | null;
     size: number | null;
     personal: boolean | null;
     quality: string | null;
@@ -78,11 +85,17 @@ export type ParseValue = {
     releaseGroup: string | null;
     encode: string | null;
     indexer: string | null;
+    year: string | null;
+    title: string | null;
+    season: number | null;
+    seasons: number[] | null;
+    episode: number | null;
     seeders: number | null;
     age: string | null;
     duration: number | null;
     infoHash: string | null;
     message: string | null;
+    proxied: boolean | null;
   };
   provider?: {
     id: string | null;
@@ -102,8 +115,14 @@ export type ParseValue = {
 
 const convertStreamToParseValue = (stream: ParsedStream): ParseValue => {
   return {
+    config: {
+      addonName: Settings.ADDON_NAME,
+      showDie: Settings.SHOW_DIE,
+    },
     stream: {
+      filename: stream.filename || null,
       name: stream.filename || null,
+      folderName: stream.folderName || null,
       size: stream.size || null,
       personal: stream.personal !== undefined ? stream.personal : null,
       quality: stream.quality === 'Unknown' ? null : stream.quality,
@@ -121,10 +140,16 @@ const convertStreamToParseValue = (stream: ParsedStream): ParseValue => {
       encode: stream.encode === 'Unknown' ? null : stream.encode,
       indexer: stream.indexers || null,
       seeders: stream.torrent?.seeders || null,
+      year: stream.year || null,
+      title: stream.title || null,
+      season: stream.season || null,
+      seasons: stream.seasons || null,
+      episode: stream.episode || null,
       age: stream.usenet?.age || null,
       duration: stream.duration || null,
       infoHash: stream.torrent?.infoHash || null,
       message: stream.message || null,
+      proxied: stream.proxied !== undefined ? stream.proxied : null,
     },
     addon: {
       id: stream.addon.id,
@@ -157,6 +182,7 @@ function parseString(str: string, value: ParseValue) {
     stream: value.stream,
     provider: value.provider,
     addon: value.addon,
+    config: value.config,
   };
 
   value.debug = {
@@ -165,7 +191,7 @@ function parseString(str: string, value: ParseValue) {
   };
 
   const re =
-    /\{(?<type>stream|provider|debug|addon)\.(?<prop>\w+)(::(?<mod>(\w+(\([^)]*\))?|<|<=|=|>=|>|\^|\$|~|\/)+))?((::(?<mod_tzlocale>\S+?))|(?<mod_check>\[(?<mod_check_true>".*?")\|\|(?<mod_check_false>".*?")\]))?\}/gi;
+    /\{(?<type>stream|provider|debug|addon|config)\.(?<prop>\w+)(::(?<mod>(\w+(\([^)]*\))?|<|<=|=|>=|>|\^|\$|~|\/)+))?((::(?<mod_tzlocale>\S+?))|(?<mod_check>\[(?<mod_check_true>".*?")\|\|(?<mod_check_false>".*?")\]))?\}/gi;
   let matches: RegExpExecArray | null;
 
   while ((matches = re.exec(str))) {
@@ -220,8 +246,11 @@ function parseString(str: string, value: ParseValue) {
   return str
     .replace(/\\n/g, '\n')
     .split('\n')
-    .filter((line) => line.trim() !== '')
-    .join('\n');
+    .filter(
+      (line) => line.trim() !== '' && !line.includes('{tools.removeLine}')
+    )
+    .join('\n')
+    .replace(/\{tools.newLine\}/g, '\n');
 }
 
 function modifier(

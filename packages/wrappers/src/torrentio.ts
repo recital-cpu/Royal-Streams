@@ -1,4 +1,9 @@
-import { AddonDetail, StreamRequest } from '@aiostreams/types';
+import {
+  AddonDetail,
+  ParseResult,
+  Stream,
+  StreamRequest,
+} from '@aiostreams/types';
 import { ParsedStream, Config } from '@aiostreams/types';
 import { BaseWrapper } from './base';
 import { addonDetails, createLogger } from '@aiostreams/utils';
@@ -29,6 +34,18 @@ export class Torrentio extends BaseWrapper {
         'User-Agent': Settings.DEFAULT_TORRENTIO_USER_AGENT,
       }
     );
+  }
+
+  protected parseStream(stream: Stream): ParseResult {
+    const parseResult = super.parseStream(stream);
+    if (parseResult.type === 'stream' && parseResult.result) {
+      const description = stream.description || stream.title;
+      const folderName = description?.split('\n')?.[0];
+      if (folderName !== parseResult.result.filename) {
+        parseResult.result.folderName = folderName;
+      }
+    }
+    return parseResult;
   }
 }
 

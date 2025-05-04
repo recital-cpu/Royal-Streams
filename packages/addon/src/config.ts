@@ -431,5 +431,72 @@ export function validateConfig(
     }
   });
 
+  if (config.regexFilters) {
+    if (!config.apiKey) {
+      return createResponse(
+        false,
+        'missingApiKey',
+        'Regex filtering requires an API key to be set'
+      );
+    }
+    
+    if (config.regexFilters.excludePattern) {
+      try {
+        new RegExp(config.regexFilters.excludePattern);
+      } catch (e) {
+        return createResponse(
+          false,
+          'invalidExcludeRegex',
+          'Invalid exclude regex pattern'
+        );
+      }
+    }
+    
+    if (config.regexFilters.includePattern) {
+      try {
+        new RegExp(config.regexFilters.includePattern);
+      } catch (e) {
+        return createResponse(
+          false,
+          'invalidIncludeRegex',
+          'Invalid include regex pattern'
+        );
+      }
+    }
+  }
+
+  if (config.regexSortPatterns) {
+    if (!config.apiKey) {
+      return createResponse(
+        false,
+        'missingApiKey',
+        'Regex sorting requires an API key to be set'
+      );
+    }
+
+    // Split the pattern by spaces and validate each one
+    const patterns = config.regexSortPatterns.split(/\s+/).filter(Boolean);
+    // Enforce an upper bound on the number of patterns
+    if (patterns.length > Settings.MAX_REGEX_SORT_PATTERNS) {
+      return createResponse(
+        false,
+        'tooManyRegexSortPatterns',
+        `You can specify at most ${Settings.MAX_REGEX_SORT_PATTERNS} regex sort patterns`
+      );
+    }
+
+    for (const pattern of patterns) {
+      try {
+        new RegExp(pattern);
+      } catch (e) {
+        return createResponse(
+          false,
+          'invalidRegexSortPattern',
+          `Invalid regex sort pattern: ${pattern}`
+        );
+      }
+    }
+  }
+
   return createResponse(true, null, null);
 }

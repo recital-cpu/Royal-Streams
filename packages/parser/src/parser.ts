@@ -1,5 +1,6 @@
 import { ParsedNameData } from '@aiostreams/types';
 import { PARSE_REGEX } from './regex';
+import * as PTT from 'parse-torrent-title';
 
 function matchPattern(
   filename: string,
@@ -33,7 +34,15 @@ export function parseFilename(filename: string): ParsedNameData {
   const visualTags = matchMultiplePatterns(filename, PARSE_REGEX.visualTags);
   const audioTags = matchMultiplePatterns(filename, PARSE_REGEX.audioTags);
   const languages = matchMultiplePatterns(filename, PARSE_REGEX.languages);
-  const releaseGroup = getMatchingPattern(filename, PARSE_REGEX.releaseGroup);
+  // const releaseGroup = getMatchingPattern(filename, PARSE_REGEX.releaseGroup);
+
+  const parsed = PTT.parse(filename);
+  const releaseGroup = parsed.group || 'Unknown';
+  const title = parsed.title;
+  const year = parsed.year ? parsed.year.toString() : undefined;
+  const season = parsed.season;
+  const seasons = parsed.seasons;
+  const episode = parsed.episode;
 
   return {
     resolution,
@@ -43,5 +52,10 @@ export function parseFilename(filename: string): ParsedNameData {
     audioTags,
     visualTags,
     releaseGroup,
+    title,
+    year,
+    season,
+    seasons,
+    episode,
   };
 }

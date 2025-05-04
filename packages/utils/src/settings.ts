@@ -84,6 +84,9 @@ export class Settings {
   public static readonly MAX_KEYWORD_FILTERS = process.env.MAX_KEYWORD_FILTERS
     ? parseInt(process.env.MAX_KEYWORD_FILTERS)
     : 30;
+  public static readonly MAX_REGEX_SORT_PATTERNS = process.env.MAX_REGEX_SORT_PATTERNS
+    ? parseInt(process.env.MAX_REGEX_SORT_PATTERNS)
+    : 20;
   public static readonly MAX_MOVIE_SIZE = process.env.MAX_MOVIE_SIZE
     ? parseInt(process.env.MAX_MOVIE_SIZE)
     : 161061273600; // 150GiB

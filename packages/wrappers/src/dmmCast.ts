@@ -56,12 +56,12 @@ export class DMMCast extends BaseWrapper {
       ? this.extractSizeInBytes(stream.title.split('\n').pop()!, 1024)
       : 0;
 
-    const parseResult: ParseResult = this.createParsedResult(
-      parsedFilename,
+    const parseResult: ParseResult = this.createParsedResult({
+      parsedInfo: parsedFilename,
       stream,
       filename,
-      sizeInBytes
-    );
+      size: sizeInBytes,
+    });
     if (parseResult.type === 'stream') {
       parseResult.result.message = message;
     }

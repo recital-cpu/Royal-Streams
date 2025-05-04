@@ -1,6 +1,6 @@
 import { ParsedStream } from '@aiostreams/types';
 import { formatSize } from './utils';
-import { serviceDetails } from '@aiostreams/utils';
+import { serviceDetails, Settings } from '@aiostreams/utils';
 
 export function torboxFormat(stream: ParsedStream): {
   name: string;
@@ -39,6 +39,12 @@ export function torboxFormat(stream: ParsedStream): {
 
   if (stream.message) {
     description += `\n${stream.message}`;
+  }
+
+  if (stream.proxied) {
+    name = `🕵️‍♂️ ${name}`;
+  } else if (Settings.SHOW_DIE) {
+    name = `🎲 ${name}`;
   }
 
   return { name, description };
