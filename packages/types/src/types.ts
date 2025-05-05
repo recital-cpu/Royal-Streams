@@ -171,6 +171,14 @@ export interface Config {
     proxiedAddons: string[] | null;
     proxiedServices: string[] | null;
   };
+  stremThruConfig?: {
+    stremThruEnabled: boolean;
+    url: string;
+    credential: string;
+    publicIp: string;
+    proxiedAddons: string[] | null;
+    proxiedServices: string[] | null;
+  };
   addons: {
     id: string;
     options: { [key: string]: string | undefined };

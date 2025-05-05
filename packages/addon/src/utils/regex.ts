@@ -9,7 +9,11 @@ const DEFAULT_TIMEOUT = 1000; // 1 second timeout
  * @param timeoutMs Optional timeout in milliseconds (default: 1000ms)
  * @returns boolean indicating if the pattern matches the string
  */
-export function safeRegexTest(pattern: RegExp, str: string, timeoutMs: number = DEFAULT_TIMEOUT): boolean {
+export function safeRegexTest(
+  pattern: RegExp,
+  str: string,
+  timeoutMs: number = DEFAULT_TIMEOUT
+): boolean {
   try {
     return isMatch(pattern, str, { timeout: timeoutMs });
   } catch (error) {
@@ -25,7 +29,11 @@ export function safeRegexTest(pattern: RegExp, str: string, timeoutMs: number = 
  * @param timeoutMs Optional timeout in milliseconds (default: 1000ms)
  * @returns The first match or undefined if no match or timeout
  */
-export function safeRegexMatch(pattern: RegExp, str: string, timeoutMs: number = DEFAULT_TIMEOUT): string | undefined {
+export function safeRegexMatch(
+  pattern: RegExp,
+  str: string,
+  timeoutMs: number = DEFAULT_TIMEOUT
+): string | undefined {
   try {
     const match = firstMatch(pattern, str, { timeout: timeoutMs });
     return match?.match;
@@ -42,12 +50,16 @@ export function safeRegexMatch(pattern: RegExp, str: string, timeoutMs: number =
  * @param timeoutMs Optional timeout in milliseconds (default: 1000ms)
  * @returns Array of matches or empty array if no matches or timeout
  */
-export function safeRegexMatches(pattern: RegExp, str: string, timeoutMs: number = DEFAULT_TIMEOUT): string[] {
+export function safeRegexMatches(
+  pattern: RegExp,
+  str: string,
+  timeoutMs: number = DEFAULT_TIMEOUT
+): string[] {
   try {
     const matches = Array.from(pattern[Symbol.matchAll](str));
-    return matches.map(m => m[0]);
+    return matches.map((m) => m[0]);
   } catch (error) {
     console.error(`Regex matches timed out after ${timeoutMs}ms:`, error);
     return [];
   }
-} 
+}
