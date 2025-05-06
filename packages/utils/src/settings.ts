@@ -91,7 +91,12 @@ export class Settings {
   public static readonly MAX_REGEX_SORT_PATTERNS = process.env
     .MAX_REGEX_SORT_PATTERNS
     ? parseInt(process.env.MAX_REGEX_SORT_PATTERNS)
-    : 20;
+    : 30;
+
+  // for directly entering the regex patterns here, replace the process.env.DEFAULT_REGEX_EXCLUDE_PATTERN with the regex pattern/s
+  public static readonly DEFAULT_REGEX_EXCLUDE_PATTERN = Settings.validateRegexPattern(process.env.DEFAULT_REGEX_EXCLUDE_PATTERN);
+  public static readonly DEFAULT_REGEX_INCLUDE_PATTERN = Settings.validateRegexPattern(process.env.DEFAULT_REGEX_INCLUDE_PATTERN);
+  public static readonly DEFAULT_REGEX_SORT_PATTERNS = Settings.validateRegexSortPatterns(process.env.DEFAULT_REGEX_SORT_PATTERNS);
   public static readonly MAX_MOVIE_SIZE = process.env.MAX_MOVIE_SIZE
     ? parseInt(process.env.MAX_MOVIE_SIZE)
     : 161061273600; // 150GiB
@@ -314,4 +319,32 @@ export class Settings {
     : undefined;
   public static readonly DEFAULT_GDRIVE_USER_AGENT =
     process.env.DEFAULT_GDRIVE_USER_AGENT ?? Settings.DEFAULT_USER_AGENT;
+
+  // helper function to validate the regex patterns
+  private static validateRegexPattern(pattern: string | undefined): string | undefined {
+    if (!pattern) return undefined;
+    try {
+      new RegExp(pattern);
+      return pattern;
+    } catch (e) {
+      console.error('Invalid regex pattern in environment variables:', pattern);
+      return undefined;
+    }
+  }
+
+  private static validateRegexSortPatterns(patterns: string | undefined): string | undefined {
+    if (!patterns) return undefined;
+    const patternList = patterns.split(/\s+/).filter(Boolean);
+    if (patternList.length > Settings.MAX_REGEX_SORT_PATTERNS) {
+      console.error(`Too many regex sort patterns in environment variables (max ${Settings.MAX_REGEX_SORT_PATTERNS})`);
+      return undefined;
+    }
+    try {
+      patternList.forEach(pattern => new RegExp(pattern));
+      return patterns;
+    } catch (e) {
+      console.error('Invalid regex sort pattern in environment variables:', e);
+      return undefined;
+    }
+  }
 }

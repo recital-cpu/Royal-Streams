@@ -48,18 +48,36 @@ const logger = createLogger('addon');
 
 export class AIOStreams {
   private config: Config;
-  private preCompiledRegexPatterns: RegExp[] = [];
+  private preCompiledRegexSortPatterns: RegExp[] = [];
+  private preCompiledRegexFilterIncludePattern: RegExp | null = null;
+  private preCompiledRegexFilterExcludePattern: RegExp | null = null;
+
 
   constructor(config: any) {
-    this.config = config;
+    // Merge environment defaults with user config
+    this.config = {
+      ...config,
+      regexFilters: {
+        excludePattern: config.regexFilters?.excludePattern ?? Settings.DEFAULT_REGEX_EXCLUDE_PATTERN,
+        includePattern: config.regexFilters?.includePattern ?? Settings.DEFAULT_REGEX_INCLUDE_PATTERN
+      },
+      regexSortPatterns: config.regexSortPatterns ?? Settings.DEFAULT_REGEX_SORT_PATTERNS
+    };
+
     // Pre-compile regex patterns if they exist
     if (this.config.regexSortPatterns) {
       const regexSortPatterns = this.config.regexSortPatterns
         .split(/\s+/)
         .filter(Boolean);
-      this.preCompiledRegexPatterns = regexSortPatterns.map(
+      this.preCompiledRegexSortPatterns = regexSortPatterns.map(
         (pattern) => new RegExp(pattern)
       );
+    }
+    if(this.config?.regexFilters?.includePattern) {
+      this.preCompiledRegexFilterIncludePattern = new RegExp(this.config?.regexFilters?.includePattern);
+    }
+    if(this.config?.regexFilters?.excludePattern) {
+      this.preCompiledRegexFilterExcludePattern = new RegExp(this.config?.regexFilters?.excludePattern);
     }
   }
 
@@ -372,34 +390,30 @@ export class AIOStreams {
 
       // apply regex filters if API key is set
       if (this.config.apiKey && this.config.regexFilters) {
-        const { excludePattern, includePattern } = this.config.regexFilters;
-
-        if (excludePattern) {
-          const regexExclude = new RegExp(excludePattern, 'i');
+        if (this.preCompiledRegexFilterExcludePattern) {
           if (
             parsedStream.filename &&
-            safeRegexTest(regexExclude, parsedStream.filename)
+            safeRegexTest(this.preCompiledRegexFilterExcludePattern, parsedStream.filename)
           ) {
             skipReasons.excludeRegex++;
             return false;
           }
           if (
             parsedStream.indexers &&
-            safeRegexTest(regexExclude, parsedStream.indexers)
+            safeRegexTest(this.preCompiledRegexFilterExcludePattern, parsedStream.indexers)
           ) {
             skipReasons.excludeRegex++;
             return false;
           }
         }
 
-        if (includePattern) {
-          const regexInclude = new RegExp(includePattern, 'i');
+        if (this.preCompiledRegexFilterIncludePattern) {
           if (
             !(
               (parsedStream.filename &&
-                safeRegexTest(regexInclude, parsedStream.filename)) ||
+                safeRegexTest(this.preCompiledRegexFilterIncludePattern, parsedStream.filename)) ||
               (parsedStream.indexers &&
-                safeRegexTest(regexInclude, parsedStream.indexers))
+                safeRegexTest(this.preCompiledRegexFilterIncludePattern, parsedStream.indexers))
             )
           ) {
             skipReasons.requiredRegex++;
@@ -807,11 +821,11 @@ export class AIOStreams {
         )
       );
     } else if (field === 'regexSort') {
-      if (!this.config.regexSortPatterns) return 0;
+      if (!this.config.regexSortPatterns || !this.config.apiKey) return 0;
 
       try {
-        for (let i = 0; i < this.preCompiledRegexPatterns.length; i++) {
-          const regex = this.preCompiledRegexPatterns[i];
+        for (let i = 0; i < this.preCompiledRegexSortPatterns.length; i++) {
+          const regex = this.preCompiledRegexSortPatterns[i];
           const aMatch = a.filename ? safeRegexTest(regex, a.filename) : false;
           const bMatch = b.filename ? safeRegexTest(regex, b.filename) : false;
 
