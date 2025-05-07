@@ -6,6 +6,8 @@ import { createLogger, maskSensitiveInfo } from './logger';
 
 const logger = createLogger('stremthru');
 
+const cache = Cache.getInstance<string, string>('publicIp');
+
 const PRIVATE_CIDR = /^(10\.|127\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/;
 
 export async function generateStremThruStreams(
@@ -97,8 +99,7 @@ export async function generateStremThruStreams(
 }
 
 export async function getStremThruPublicIp(
-  stremThruConfig: Config['stremThruConfig'],
-  cache: Cache<string, string>
+  stremThruConfig: Config['stremThruConfig']
 ) {
   try {
     if (!stremThruConfig) {

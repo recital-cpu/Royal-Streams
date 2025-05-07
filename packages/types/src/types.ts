@@ -135,7 +135,6 @@ export interface CustomFormatter {
 export interface Config {
   apiKey?: string;
   overrideName?: string;
-  instanceCache?: any;
   requestingIp?: string;
   resolutions: Resolution[];
   qualities: Quality[];
