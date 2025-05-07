@@ -23,11 +23,20 @@ try {
 const DEFAULT_TIMEOUT = 15000; // 15 seconds
 
 const secretKey = makeValidator((x) => {
-  // must be 32 or 64 characters long and hex
-  if (!/^[0-9a-fA-F]{32}$|^[0-9a-fA-F]{64}$/.test(x)) {
-    throw new Error('Secret key must be a 32 or 64 character hex string');
+  if (typeof x !== 'string') {
+    throw new Error('Secret key must be a string');
   }
-  return x;
+  // backwards compatibility for 32 character secret keys
+  if (x.length === 32) {
+    return x;
+  }
+  if (x.length === 64) {
+    if (!/^[0-9a-fA-F]{64}$/.test(x)) {
+      throw new EnvError('64-character secret key must be a hex string');
+    }
+    return x;
+  }
+  throw new EnvError('Secret key must be a 64-character hex string');
 });
 
 const regex = makeValidator((x) => {
@@ -54,9 +63,14 @@ const multipleRegex = makeValidator((x) => {
     );
   }
   // try compiling each pattern to check for validity
-
+  // each "pattern" is regexName::regexPattern, where regexName is optional
+  // we need to only extract the regexPattern part,
   patterns.forEach((p) => {
     try {
+      const delimiterIndex = p.indexOf('<::>');
+      if (delimiterIndex !== -1) {
+        p = p.slice(delimiterIndex + 2);
+      }
       new RegExp(p);
     } catch (e) {
       throw new EnvError(`Invalid regex pattern: ${p}`);

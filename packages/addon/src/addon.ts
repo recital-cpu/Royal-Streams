@@ -45,6 +45,7 @@ import {
   formRegexFromKeywords,
 } from '@aiostreams/utils';
 import { errorStream } from './responses';
+import { isMatch } from 'super-regex';
 
 const logger = createLogger('addon');
 
@@ -158,12 +159,28 @@ export class AIOStreams {
       ? this.config.regexSortPatterns || Settings.DEFAULT_REGEX_SORT_PATTERNS
       : undefined;
 
-    const sortRegexes = sortRegexPatterns
-      ? sortRegexPatterns
-          .split(/\s+/)
-          .filter(Boolean)
-          .map((pattern) => compileRegex(pattern, 'i'))
-      : undefined;
+    const sortRegexes: { name?: string; regex: RegExp }[] | undefined =
+      sortRegexPatterns
+        ? sortRegexPatterns
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((pattern) => {
+              const delimiter = '<::>';
+              const delimiterIndex = pattern.indexOf(delimiter);
+              if (delimiterIndex !== -1) {
+                const name = pattern
+                  .slice(0, delimiterIndex)
+                  .replace(/_/g, ' ');
+                const regexPattern = pattern.slice(
+                  delimiterIndex + delimiter.length
+                );
+
+                const regex = compileRegex(regexPattern, 'i');
+                return { name, regex };
+              }
+              return { regex: compileRegex(pattern, 'i') };
+            })
+        : undefined;
 
     excludeRegex ||
     excludeKeywordsRegex ||
@@ -176,7 +193,7 @@ export class AIOStreams {
             `Exclude Keywords: ${excludeKeywordsRegex}\n` +
             `Required Regex: ${requiredRegex}\n` +
             `Required Keywords: ${requiredKeywordsRegex}\n` +
-            `Sort Regexes: ${sortRegexes?.join('  -->  ')}\n`
+            `Sort Regexes: ${sortRegexes?.map((regex) => `${regex.name || 'Unnamed'}: ${regex.regex}`).join(' --> ')}\n`
         )
       : [];
 
@@ -492,6 +509,32 @@ export class AIOStreams {
         filteredResults.length - cleanedStreams.length;
       filteredResults = cleanedStreams;
     }
+    // pre compute highest indexes for regexSortPatterns
+    const startPrecomputeTime = new Date().getTime();
+    filteredResults.forEach((stream: ParsedStream) => {
+      if (sortRegexes) {
+        for (let i = 0; i < sortRegexes.length; i++) {
+          if (!stream.filename && !stream.folderName) continue;
+          const regex = sortRegexes[i];
+          if (
+            (stream.filename && isMatch(regex.regex, stream.filename)) ||
+            (stream.folderName && isMatch(regex.regex, stream.folderName))
+          ) {
+            stream.regexMatched = {
+              name: regex.name,
+              pattern: regex.regex.source,
+              index: i,
+            };
+            break;
+          }
+        }
+      }
+    });
+    logger.info(
+      `Precomputed sortRegex indexes for ${filteredResults.length} streams in ${getTimeTakenSincePoint(
+        startPrecomputeTime
+      )}`
+    );
     // Apply sorting
     const sortStartTime = new Date().getTime();
     // initially sort by filename to ensure consistent results
@@ -796,12 +839,6 @@ export class AIOStreams {
       const regexSortPatterns =
         this.config.regexSortPatterns || Settings.DEFAULT_REGEX_SORT_PATTERNS;
       if (!regexSortPatterns) return 0;
-      // generate array of RegExp objects from space separated patterns
-      const compiledRegexPatterns = regexSortPatterns
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((pattern) => compileRegex(pattern, 'i'));
-
       try {
         // Get direction once
         const direction = this.config.sortBy.find(
@@ -813,18 +850,20 @@ export class AIOStreams {
         if (!a.filename) return direction === 'asc' ? -1 : 1;
         if (!b.filename) return direction === 'asc' ? 1 : -1;
 
-        // Test patterns in order
-        for (const regex of compiledRegexPatterns) {
-          const aMatch = safeRegexTest(regex, a.filename);
-          const bMatch = safeRegexTest(regex, b.filename);
-          // If both match or both don't match, continue to next pattern
-          if ((aMatch && bMatch) || (!aMatch && !bMatch)) continue;
+        const aHighestIndex = a.regexMatched?.index;
+        const bHighestIndex = b.regexMatched?.index;
 
-          // If one matches and the other doesn't, use direction to determine order
-          return direction === 'asc' ? (aMatch ? 1 : -1) : aMatch ? -1 : 1;
+        // If both have a regex match, sort by the highest index
+        if (aHighestIndex !== undefined && bHighestIndex !== undefined) {
+          return direction === 'asc'
+            ? bHighestIndex - aHighestIndex
+            : aHighestIndex - bHighestIndex;
         }
+        // If one has a regex match and the other doesn't, sort by the one that does
+        if (aHighestIndex !== undefined) return direction === 'asc' ? 1 : -1;
+        if (bHighestIndex !== undefined) return direction === 'asc' ? -1 : 1;
 
-        // If we get here, no patterns matched or all patterns matched the same way
+        // If both have no regex match, they are equal
         return 0;
       } catch (e) {
         return 0;

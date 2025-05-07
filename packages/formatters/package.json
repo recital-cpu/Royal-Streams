@@ -1,6 +1,6 @@
 {
   "name": "@aiostreams/formatters",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "main": "./dist/index.js",
   "scripts": {
     "test": "vitest run --passWithNoTests",
