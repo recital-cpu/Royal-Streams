@@ -83,10 +83,10 @@ export async function getEasynewsPlusPlusStreams(
   if (!credentails || !credentails.username || !credentails.password) {
     throw new Error('Easynews credentials not found');
   }
-
   const easynewsPlusConfigString = getEasynewsPlusPlusConfigString(
     credentails.username,
-    credentails.password
+    credentails.password,
+    easynewsPlusOptions.strictTitleMatching
   );
 
   const easynews = new EasynewsPlusPlus(
